@@ -386,6 +386,20 @@
 	gap: 0.5rem;
   }
 
+  #lang-toggle-btn {
+	position: fixed;
+	top: 1rem;
+	right: 1rem;
+	z-index: 1200;
+	background-color: var(--surface-color);
+	color: var(--text-color);
+	border: 1px solid var(--border-color);
+	padding: 0.35rem 0.7rem;
+	font-size: 0.85rem;
+	border-radius: 999px;
+	line-height: 1.2;
+  }
+
   #theme-toggle-btn {
 	width: 36px;
 	height: 36px;
@@ -3049,6 +3063,7 @@
 <div id='initial-loader'>
 	<div class='spinner'></div>
 </div>
+<button type='button' id='lang-toggle-btn'>中文</button>
 <!-- Login Screen -->
 <div id='auth-container'>
 	<form id='login-form' class='auth-form'>
@@ -3807,6 +3822,87 @@
 		tables: true
 	});
 
+	const i18nMessages = {
+		en: {
+			username: 'Username',
+			password: 'Password',
+			login: 'Login',
+			search: 'Search...',
+			clear: 'Clear',
+			days: 'Days',
+			memos: 'Memos',
+			tags: 'Tags',
+			timeline: 'Timeline',
+			clearTagFilter: 'Clear tag filter',
+			showAllNotes: 'Show All Notes',
+			refresh: 'Refresh',
+			toggleWaterfall: 'Toggle waterfall mode',
+			toggleWide: 'Toggle wide mode',
+			moreOptions: 'More options',
+			settings: 'Settings',
+			themeColor: 'Theme Color',
+			logout: 'Logout',
+			writeMarkdown: 'Write in Markdown...',
+			searchTag: 'Search or select tag...',
+			insertTag: 'Insert tag (#)',
+			insertImage: 'Insert image',
+			selectFiles: 'Select files',
+			fullscreenEditor: 'Fullscreen Editor',
+			togglePreview: 'Toggle Preview',
+			previousMonth: 'Previous month',
+			nextMonth: 'Next month',
+			noMoreNotes: 'No more notes.',
+			nothingHere: 'Nothing here yet.',
+			noTagsYet: 'No tags yet.',
+			noTagsFound: 'No tags found',
+			errorLoadingTags: 'Error loading tags.',
+			noteUnit: 'note',
+			notesUnit: 'notes',
+			onDate: 'on'
+		},
+		zh: {
+			username: '用户名',
+			password: '密码',
+			login: '登录',
+			search: '搜索...',
+			clear: '清除',
+			days: '天数',
+			memos: '备忘',
+			tags: '标签',
+			timeline: '时间线',
+			clearTagFilter: '清除标签筛选',
+			showAllNotes: '显示全部笔记',
+			refresh: '刷新',
+			toggleWaterfall: '切换瀑布流模式',
+			toggleWide: '切换宽屏模式',
+			moreOptions: '更多选项',
+			settings: '设置',
+			themeColor: '主题颜色',
+			logout: '退出登录',
+			writeMarkdown: '使用 Markdown 编写...',
+			searchTag: '搜索或选择标签...',
+			insertTag: '插入标签 (#)',
+			insertImage: '插入图片',
+			selectFiles: '选择文件',
+			fullscreenEditor: '全屏编辑',
+			togglePreview: '切换预览',
+			previousMonth: '上个月',
+			nextMonth: '下个月',
+			noMoreNotes: '没有更多笔记了。',
+			nothingHere: '这里还没有内容。',
+			noTagsYet: '暂无标签。',
+			noTagsFound: '未找到标签',
+			errorLoadingTags: '加载标签失败。',
+			noteUnit: '条笔记',
+			notesUnit: '条笔记',
+			onDate: ''
+		}
+	};
+	let currentLang = localStorage.getItem('memos_lang') || 'en';
+	function t(key) {
+		return i18nMessages[currentLang]?.[key] ?? i18nMessages.en[key] ?? key;
+	}
+
 	const calendarWrapper = document.getElementById('calendar-wrapper');
 	const calendarTooltip = document.getElementById('calendar-tooltip'); // 【新增】
 	let notesDataByDate = new Map();
@@ -3830,12 +3926,12 @@
 			const header = document.createElement('div');
 			header.className = 'calendar-header';
 			header.innerHTML = `
-                <button id='calendar-prev' class='calendar-nav-btn' title='Previous month'>◄</button>
-                <span id='calendar-month-year'>${this.currentDate.toLocaleString('en-US', {
+                <button id='calendar-prev' class='calendar-nav-btn' title='${t('previousMonth')}'>◄</button>
+                <span id='calendar-month-year'>${this.currentDate.toLocaleString(currentLang === 'zh' ? 'zh-CN' : 'en-US', {
 				month: 'long',
 				year: 'numeric'
 			})}</span>
-                <button id='calendar-next' class='calendar-nav-btn' title='Next month'>►</button>
+                <button id='calendar-next' class='calendar-nav-btn' title='${t('nextMonth')}'>►</button>
             `;
 			this.container.appendChild(header);
 			const nextMonthBtn = document.getElementById('calendar-next');
@@ -3846,7 +3942,9 @@
 
 			const grid = document.createElement('div');
 			grid.className = 'calendar-grid';
-			const dayNames = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+			const dayNames = currentLang === 'zh'
+				? ['日', '一', '二', '三', '四', '五', '六']
+				: ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 			dayNames.forEach(name => {
 				const dayNameEl = document.createElement('div');
 				dayNameEl.className = 'calendar-day-name';
@@ -3913,8 +4011,12 @@
 					const dateStr = target.dataset.date;
 					const count = this.dataProvider.get(dateStr) || 0;
 					if (count > 0) {
-						const countText = count === 1 ? '1 note' : `${count} notes`;
-						calendarTooltip.textContent = `${countText} on ${dateStr}`;
+						const countText = currentLang === 'zh'
+							? `${count}${t('notesUnit')}`
+							: (count === 1 ? `1 ${t('noteUnit')}` : `${count} ${t('notesUnit')}`);
+						calendarTooltip.textContent = currentLang === 'zh'
+							? `${dateStr} ${countText}`
+							: `${countText} ${t('onDate')} ${dateStr}`;
 						calendarTooltip.style.display = 'block';
 					}
 				});
@@ -4202,6 +4304,7 @@
 	const scrollLoader = document.getElementById('scroll-loader');
 	const refreshBtn = document.getElementById('refresh-btn');
 	const themeToggleBtn = document.getElementById('theme-toggle-btn');
+	const langToggleBtn = document.getElementById('lang-toggle-btn');
 	const customModalOverlay = document.getElementById('custom-modal-overlay');
 	// Alert elements
 	const customAlertBox = document.getElementById('custom-alert-box');
@@ -4330,6 +4433,47 @@
 	const expirationSelect = document.getElementById('expiration-select');
 	const expirationStatus = document.getElementById('expiration-status');
 	let currentPublicId = null;
+
+	function applyLanguage() {
+		document.documentElement.lang = currentLang === 'zh' ? 'zh-CN' : 'en';
+		langToggleBtn.textContent = currentLang === 'zh' ? 'EN' : '中文';
+		document.getElementById('username').placeholder = t('username');
+		document.getElementById('password').placeholder = t('password');
+		document.getElementById('login-btn').textContent = t('login');
+		globalSearchInput.placeholder = t('search');
+		clearSearchBtn.title = t('clear');
+		document.querySelector('#stats-card .stat-item:nth-child(1) .stat-label').textContent = t('days');
+		document.querySelector('#stats-card .stat-item:nth-child(2) .stat-label').textContent = t('memos');
+		document.querySelector('#stats-card .stat-item:nth-child(3) .stat-label').textContent = t('tags');
+		document.querySelector('#tags-section-wrapper h4 > span').textContent = t('tags');
+		document.querySelector('#timeline-section-wrapper h4 > span').textContent = t('timeline');
+		document.getElementById('clear-tags-filter-btn').title = t('clearTagFilter');
+		document.getElementById('clear-filter-btn').title = t('showAllNotes');
+		refreshBtn.title = t('refresh');
+		waterfallToggleBtn.title = t('toggleWaterfall');
+		wideModeToggleBtn.title = t('toggleWide');
+		moreActionsBtn.title = t('moreOptions');
+		document.querySelector('#settings-btn span').textContent = t('settings');
+		document.querySelector('#theme-color-btn span').textContent = t('themeColor');
+		document.querySelector('#logout-btn span').textContent = t('logout');
+		noteInput.placeholder = t('writeMarkdown');
+		tagSearchInput.placeholder = t('searchTag');
+		insertTagBtn.title = t('insertTag');
+		insertImageBtn.title = t('insertImage');
+		selectFilesBtn.title = t('selectFiles');
+		enterFullscreenBtn.title = t('fullscreenEditor');
+		mainPreviewToggleBtn.title = t('togglePreview');
+	}
+
+	langToggleBtn.addEventListener('click', () => {
+		currentLang = currentLang === 'zh' ? 'en' : 'zh';
+		localStorage.setItem('memos_lang', currentLang);
+		applyLanguage();
+		if (calendarInstance) {
+			calendarInstance.render();
+		}
+	});
+	applyLanguage();
 
 	expirationSelect.addEventListener('change', async () => {
 		const shareModal = document.getElementById('share-link-modal-overlay');
@@ -5163,10 +5307,10 @@
 				// 处理加载更多的UI
 				if (!data.hasMore) {
 					if (allNotesCache.length > 0) {
-						scrollLoader.textContent = 'No more notes.';
+						scrollLoader.textContent = t('noMoreNotes');
 						scrollLoader.style.display = 'block';
 					} else {
-						notesContainer.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 1rem 0;">Nothing here yet.</div>';
+						notesContainer.innerHTML = `<div style="text-align: center; color: var(--text-secondary); padding: 1rem 0;">${t('nothingHere')}</div>`;
 						scrollLoader.style.display = 'none';
 					}
 				}
@@ -7137,7 +7281,7 @@
 		if (filteredTags.length === 0) {
 			const li = document.createElement('li');
 			li.className = 'no-results';
-			li.textContent = filter ? 'No tags found' : 'No tags yet';
+			li.textContent = filter ? t('noTagsFound') : t('noTagsYet');
 			tagDropdownList.appendChild(li);
 			return;
 		}
@@ -7289,10 +7433,10 @@
 				scrollLoader.style.display = 'none';
 			} else {
 				if (allNotesCache.length > 0) {
-					scrollLoader.textContent = 'No more notes.';
+					scrollLoader.textContent = t('noMoreNotes');
 					scrollLoader.style.display = 'block';
 				} else {
-					notesContainer.innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 1rem 0;">Nothing here yet.</div>';
+					notesContainer.innerHTML = `<div style="text-align: center; color: var(--text-secondary); padding: 1rem 0;">${t('nothingHere')}</div>`;
 					scrollLoader.style.display = 'none';
 				}
 			}
@@ -8531,7 +8675,7 @@
 			const listElement = tagsContainer.querySelector('ul');
 
 			if (tags.length === 0) {
-				listElement.innerHTML = '<li><div class="tag-item-placeholder">No tags yet.</div></li>';
+				listElement.innerHTML = `<li><div class="tag-item-placeholder">${t('noTagsYet')}</div></li>`;
 				return;
 			}
 			tags.forEach(tag => {
@@ -8549,7 +8693,7 @@
 			});
 		} catch (error) {
 			console.error('Error loading tags:', error);
-			tagsContainer.innerHTML = '<p>Error loading tags.</p>';
+			tagsContainer.innerHTML = `<p>${t('errorLoadingTags')}</p>`;
 		}
 	}
 
